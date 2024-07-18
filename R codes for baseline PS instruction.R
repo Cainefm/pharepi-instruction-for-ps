@@ -28,7 +28,7 @@ get_coef <- function(model){
 }
 
 # Package loading and environment setting ----------------------------------
-options(scipen = 6, digits = 4)
+options(scipen = 6, digits = 6)
 memory.limit(30000000)
 library(data.table) # data manipulation
 library(tableone) # creating table one and obtaining SMD
@@ -45,7 +45,7 @@ dt[,age:=as.numeric(age)]
 
 ps_formula <- as.formula(paste0("COVID~",paste(cova,collapse = "+")))
 ps_model <- glm(formula = ps_formula,data = dt,family = "binomial")
-saveRDS(ps_model,file = "data/psmodel_result.RDS")
+#saveRDS(ps_model,file = "data/psmodel_result.RDS")
 dt$psvalue <- ps_model$fitted.values
 
 tableone_ps <- print(CreateTableOne(vars = c(cova,"psvalue"),strata = "COVID",data = dt,test = FALSE),smd =T)
@@ -53,7 +53,7 @@ as.data.table(tableone_ps,keep.rownames = T)[as.numeric(SMD)>0.1]
 
 # regression adjustment ---------------------------------------------------
 
-# outcome model
+## outcome model
 outcome_model_regadj <- glm(outcome.MAKE~COVID+psvalue,data = dt,family="binomial")
 get_coef(outcome_model_regadj)
 
@@ -61,7 +61,11 @@ get_coef(outcome_model_regadj)
 
 
 # stratification ----------------------------------------------------------
-
+### obtain the max and min of the ps value group by exposure group; get the max of min, min of the max
+temp_range <- dt[,.(max=max(psvalue),min=min(psvalue)),COVID][,.(min=max(min),max=min(max))]
+dt_stratification<-dt[psvalue>=temp_range$min&psvalue<=temp_range$max]
+### make strata accordiing to the ps
+dt_stratification<- dt_stratification[order(psvalue),][,rank_ps:=.I][,strata:=floor(rank_ps*5/.N +1)][]
 
 
 # weighting ---------------------------------------------------------------
