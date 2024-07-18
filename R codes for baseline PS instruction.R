@@ -67,6 +67,30 @@ dt_stratification<-dt[psvalue>=temp_range$min&psvalue<=temp_range$max]
 ### make strata accordiing to the ps
 dt_stratification<- dt_stratification[order(psvalue),][,rank_ps:=.I][,strata:=floor(rank_ps*5/.N +1)][]
 
+temp_stratification <-
+merge(dt_stratification[COVID == 1, .(ct = .N), by = strata][order(strata, -ct)][!duplicated(strata)][, .(strata, exp = 1, ct_exp = ct)],
+dt_stratification[COVID == 0, .(ct = .N), by = strata][order(strata, -ct)][!duplicated(strata)][, .(strata, nonexp = 0, ct_nonexp = ct)],by="strata")[
+    !is.na(ct_exp) & !is.na(ct_nonexp) & ct_exp != 0 & ct_nonexp != 0
+    ][,`:=`(w_unexp=(ct_exp/sum(ct_exp))/(ct_nonexp/sum(ct_nonexp)),w_exp=1)
+      ]
+temp_stratification<-rbind(temp_stratification[,.(strata,w=w_exp,COVID=exp)],
+                           temp_stratification[,.(strata,w=w_unexp,COVID=nonexp)])[]
+
+
+dt_stratification <- merge(dt_stratification,temp_stratification,by=c("strata","COVID"))
+
+unloadNamespace("tableone")
+library(survey)
+
+trim_weight <- svydesign(ids = ~ patient_pssn, strata = ~ COVID, weights = ~ w,
+                         data = dt_stratification)
+library(tableone)
+tab1 <- svyCreateTableOne(vars = varsp,
+                          strata = "dm_sas", data = trim_weight,
+                          factorVars = catvarsp)
+baseline<-as.data.frame(as.data.table(print(tab1,test = F,noSpaces = T,smd = TRUE),
+                                      keep.rownames = T))
+
 
 # weighting ---------------------------------------------------------------
 
