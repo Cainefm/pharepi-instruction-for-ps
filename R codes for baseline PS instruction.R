@@ -79,19 +79,17 @@ temp_stratification<-rbind(temp_stratification[,.(strata,w=w_exp,COVID=exp)],
 
 dt_stratification <- merge(dt_stratification,temp_stratification,by=c("strata","COVID"))
 
-unloadNamespace("tableone")
-library(survey)
 
-trim_weight <- svydesign(ids = ~ patient_pssn, strata = ~ COVID, weights = ~ w,
+trim_weight <- survey::svydesign(ids = ~ patient_pssn, strata = ~ COVID, weights = ~ w,
                          data = dt_stratification)
 library(tableone)
-tab1 <- svyCreateTableOne(vars = varsp,
-                          strata = "dm_sas", data = trim_weight,
-                          factorVars = catvarsp)
+tab1 <- svyCreateTableOne(vars = cova,
+                          strata = "COVID", data = trim_weight,
+                          factorVars = setdiff(cova,"age"))
 baseline<-as.data.frame(as.data.table(print(tab1,test = F,noSpaces = T,smd = TRUE),
                                       keep.rownames = T))
 
-
+baseline
 # weighting ---------------------------------------------------------------
 
 ## IPTW
