@@ -12,3 +12,16 @@ Propensity score methods have been widely utilized in pharmacoepidemiology studi
 The project includes code for various approaches: regression adjustment, matching, stratification, and weighting. These techniques help address confounding in observational studies, enhancing the validity of causal inferences.
 
 
+# Propensity Score Approaches
+
+
+# 1. Regression Adjustment
+
+
+# 2. Matching
+
+
+# 3. Stratification
+
+
+# 4. Weighting
